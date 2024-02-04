@@ -18,6 +18,7 @@ func main() {
 	db := initDB()
 	server := initWebServer()
 	initUser(db, server)
+
 	server.Run(":8080")
 }
 
