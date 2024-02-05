@@ -1,9 +1,12 @@
 package web
 
 import (
+	"fmt"
 	regexp "github.com/dlclark/regexp2"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 	"webook/internal/domain"
 	"webook/internal/service"
 )
@@ -99,9 +102,19 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	_, err := h.svc.Login(ctx, req.Email, req.Password)
+	u, err := h.svc.Login(ctx, req.Email, req.Password)
 	switch err {
 	case nil:
+		session := sessions.Default(ctx)
+		session.Set("userId", u.Id)
+		session.Options(sessions.Options{
+			MaxAge: 900,
+		})
+		err = session.Save()
+		if err != nil {
+			ctx.String(http.StatusOK, "系统错误")
+			return
+		}
 		ctx.String(http.StatusOK, "登录成功")
 	case service.ErrInvalidUserOrPassword:
 		ctx.String(http.StatusOK, "用户名或密码错误")
@@ -112,9 +125,66 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
+	type EditReq struct {
+		NickName string `json:"nickname"`
+		Birthday string `json:"birthday"`
+		AboutMe  string `json:"about_me"`
+	}
+	var req EditReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
 
+	t, err := time.Parse("2006-01-02", req.Birthday)
+	if err != nil {
+		fmt.Println("解析日期失败:", err)
+		return
+	}
+
+	// 使用 time.Unix() 函数将 time.Time 对象转换为时间戳（Unix 时间）
+	timestamp := t.Unix()
+	sess := sessions.Default(ctx)
+	id := sess.Get("userId").(int64)
+	err = h.svc.Edit(ctx, domain.User{
+		Id:       id,
+		NickName: req.NickName,
+		Birthday: timestamp,
+		AboutMe:  req.AboutMe,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	ctx.String(http.StatusOK, "更新成功")
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
+	type Profile struct {
+		Id       int64
+		Email    string
+		NickName string
+		Birthday string
+		AboutMe  string
+	}
+	sess := sessions.Default(ctx)
+	id := sess.Get("userId").(int64)
+	u, err := h.svc.Profile(ctx, id)
+	if err != nil {
+		// 按照道理来说，这边 id 对应的数据肯定存在，所以要是没找到，
+		// 那就说明是系统出了问题。
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	// 将时间戳转换为Time类型
+	timeValue := time.Unix(u.Birthday, 0)
 
+	// 将Time类型格式化为字符串
+	dateString := timeValue.Format("2006-01-02")
+	ctx.JSON(http.StatusOK, Profile{
+		Id:       id,
+		Email:    u.Email,
+		NickName: u.NickName,
+		Birthday: dateString,
+		AboutMe:  u.AboutMe,
+	})
 }

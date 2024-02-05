@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
 	"webook/internal/domain"
 	"webook/internal/repository/dao"
 )
@@ -42,4 +43,27 @@ func (repo *UserRepository) toDomain(u dao.User) domain.User {
 		Email:    u.Email,
 		Password: u.Password,
 	}
+}
+
+func (repo *UserRepository) Edit(ctx context.Context, u domain.User) error {
+	return repo.dao.Edit(ctx, dao.User{
+		Id:       u.Id,
+		Birthday: u.Birthday,
+		AboutMe:  u.AboutMe,
+		NickName: u.NickName,
+	})
+}
+
+func (repo *UserRepository) FindById(ctx *gin.Context, id int64) (domain.User, error) {
+	u, err := repo.dao.FindById(ctx, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return domain.User{
+		Id:       u.Id,
+		NickName: u.NickName,
+		Email:    u.Email,
+		Birthday: u.Birthday,
+		AboutMe:  u.AboutMe,
+	}, nil
 }

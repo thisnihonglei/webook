@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"webook/internal/domain"
 	"webook/internal/repository"
@@ -45,4 +46,13 @@ func (svc *UserService) Login(ctx context.Context, email string, password string
 		return domain.User{}, ErrInvalidUserOrPassword
 	}
 	return u, err
+}
+
+func (svc *UserService) Edit(ctx context.Context, user domain.User) error {
+	return svc.repo.Edit(ctx, user)
+}
+
+func (svc *UserService) Profile(ctx *gin.Context, id int64) (domain.User, error) {
+	return svc.repo.FindById(ctx, id)
+
 }
