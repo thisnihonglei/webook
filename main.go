@@ -50,7 +50,8 @@ func initWebServer() *gin.Engine {
 	server := gin.Default()
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true,
-		AllowedHeaders:   []string{"Content-Type"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"x-jwt-token"},
 		AllowOriginFunc: func(origin string) bool {
 			if strings.HasPrefix(origin, "http://localhost") {
 				return true
@@ -59,7 +60,18 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+	useJWT(server)
+	//useSession(server)
 
+	return server
+}
+
+func useJWT(server *gin.Engine) {
+	login := &middleware.LoginJWTMiddlewareBuilder{}
+	server.Use(login.CheckLogin())
+}
+
+func useSession(server *gin.Engine) {
 	//store := cookie.NewStore([]byte("secret"))
 	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
 		[]byte("cgWrzQrzH2tfJngYC59iuqh3Dix235FX"),
@@ -71,5 +83,4 @@ func initWebServer() *gin.Engine {
 	server.Use(sessions.Sessions("ssid", store))
 	login := &middleware.LoginMiddlewareBuilder{}
 	server.Use(login.CheckLogin())
-	return server
 }
