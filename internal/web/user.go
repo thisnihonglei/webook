@@ -183,12 +183,18 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	//sess := sessions.Default(ctx)
 	//id := sess.Get("userId").(int64)
 
-	uc, exists := ctx.Get("user")
+	userData, exists := ctx.Get("user")
 	if !exists {
 		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
-	id := uc.(UserClaims).Uid
+	uc, ok := userData.(UserClaims)
+	if !ok {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+
+	id := uc.Uid
 
 	err = h.svc.Edit(ctx, domain.User{
 		Id:       id,
@@ -214,12 +220,18 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	//sess := sessions.Default(ctx)
 	//id := sess.Get("userId").(int64)
 
-	uc, exists := ctx.Get("user")
+	userData, exists := ctx.Get("user")
 	if !exists {
 		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
-	id := uc.(UserClaims).Uid
+	uc, ok := userData.(UserClaims)
+	if !ok {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+
+	id := uc.Uid
 
 	u, err := h.svc.Profile(ctx, id)
 	if err != nil {
