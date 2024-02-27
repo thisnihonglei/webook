@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
+	//"github.com/gin-contrib/sessions"
+	//"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"net/http"
 	"strings"
 	"time"
 	"webook/internal/repository"
@@ -14,14 +16,18 @@ import (
 	"webook/internal/service"
 	"webook/internal/web"
 	"webook/internal/web/middleware"
+	"webook/pkg/ginx/middleware/ratelimit"
 )
 
 func main() {
 
-	db := initDB()
-	server := initWebServer()
-	initUser(db, server)
-
+	//db := initDB()
+	//server := initWebServer()
+	//initUser(db, server)
+	server := gin.Default()
+	server.GET("/hello", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "hello,Kubernetes 启动成功了！")
+	})
 	server.Run(":8080")
 }
 
@@ -60,6 +66,11 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "127.0.0.1:6379",
+	})
+	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+
 	useJWT(server)
 	//useSession(server)
 
@@ -71,16 +82,16 @@ func useJWT(server *gin.Engine) {
 	server.Use(login.CheckLogin())
 }
 
-func useSession(server *gin.Engine) {
-	//store := cookie.NewStore([]byte("secret"))
-	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
-		[]byte("cgWrzQrzH2tfJngYC59iuqh3Dix235FX"),
-		[]byte("h1R8JhnYVKVnajhK9HsYhwTmM1FNo7bS"),
-	)
-	if err != nil {
-		panic(err)
-	}
-	server.Use(sessions.Sessions("ssid", store))
-	login := &middleware.LoginMiddlewareBuilder{}
-	server.Use(login.CheckLogin())
-}
+//func useSession(server *gin.Engine) {
+//	//store := cookie.NewStore([]byte("secret"))
+//	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+//		[]byte("cgWrzQrzH2tfJngYC59iuqh3Dix235FX"),
+//		[]byte("h1R8JhnYVKVnajhK9HsYhwTmM1FNo7bS"),
+//	)
+//	if err != nil {
+//		panic(err)
+//	}
+//	server.Use(sessions.Sessions("ssid", store))
+//	login := &middleware.LoginMiddlewareBuilder{}
+//	server.Use(login.CheckLogin())
+//}

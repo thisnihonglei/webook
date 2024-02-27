@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webook-record-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webook-record
+  template:
+      metadata:
+        labels:
+          app: webook-record
+      spec:
+        containers:
+          - name: webook-record
+            image: flycash/webook:v0.0.1
+            ports:
+              - containerPort: 8080
