@@ -5,35 +5,36 @@ import (
 	//"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"net/http"
 	"strings"
 	"time"
 	"webook/internal/repository"
+	"webook/internal/repository/cache"
 	"webook/internal/repository/dao"
 	"webook/internal/service"
 	"webook/internal/web"
 	"webook/internal/web/middleware"
-	"webook/pkg/ginx/middleware/ratelimit"
+	"webook/ioc"
 )
 
 func main() {
 
-	//db := initDB()
-	//server := initWebServer()
-	//initUser(db, server)
-	server := gin.Default()
-	server.GET("/hello", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "hello,Kubernetes 启动成功了！")
-	})
+	db := initDB()
+	server := initWebServer()
+	initUser(db, server)
+	//server := gin.Default()
+	//server.GET("/hello", func(ctx *gin.Context) {
+	//	ctx.String(http.StatusOK, "hello,Kubernetes 启动成功了！")
+	//})
 	server.Run(":8080")
 }
 
 func initUser(db *gorm.DB, server *gin.Engine) {
+	cmdable := ioc.InitRedis()
+	userCache := cache.NewUserCache(cmdable)
 	ud := dao.NewUserDAO(db)
-	ur := repository.NewUserRepository(ud)
+	ur := repository.NewUserRepository(ud, userCache)
 	us := service.NewUserService(ur)
 	hdl := web.NewUserHandler(us)
 	hdl.RegisterRoutes(server)
@@ -66,10 +67,10 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: "127.0.0.1:6379",
-	})
-	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+	//redisClient := redis.NewClient(&redis.Options{
+	//	Addr: "127.0.0.1:6379",
+	//})
+	//server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
 	useJWT(server)
 	//useSession(server)
