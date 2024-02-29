@@ -46,6 +46,9 @@ func (repo *UserRepository) toDomain(u dao.User) domain.User {
 		Id:       u.Id,
 		Email:    u.Email,
 		Password: u.Password,
+		Birthday: u.Birthday,
+		NickName: u.NickName,
+		AboutMe:  u.AboutMe,
 	}
 }
 
