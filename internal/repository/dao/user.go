@@ -2,8 +2,8 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 	"time"
@@ -55,19 +55,28 @@ func (dao *UserDAO) Edit(ctx context.Context, user User) error {
 	}).Error
 }
 
-func (dao *UserDAO) FindById(ctx *gin.Context, id int64) (User, error) {
+func (dao *UserDAO) FindById(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("id=?", id).First(&u).Error
 	return u, err
 }
 
+func (dao *UserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
+	return u, err
+}
+
 type User struct {
-	Id       int64  `gorm:"primaryKey,autoIncrement"`
-	Email    string `gorm:"unique"`
+	Id int64 `gorm:"primaryKey,autoIncrement"`
+	// 这是一个可以为NULL的列
+	// Email   *string
+	Email    sql.NullString `gorm:"unique"`
 	Password string
 	NickName string
 	Birthday int64
 	AboutMe  string
+	Phone    sql.NullString `gorm:"unique"`
 	Ctime    int64
 	Utime    int64
 }

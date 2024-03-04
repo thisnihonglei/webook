@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrDuplicateEmail        = repository.ErrDuplicateEmail
+	ErrDuplicateEmail        = repository.ErrDuplicateUser
 	ErrInvalidUserOrPassword = errors.New("用户不存在或密码错误")
 )
 
@@ -52,7 +52,27 @@ func (svc *UserService) Edit(ctx context.Context, user domain.User) error {
 	return svc.repo.Edit(ctx, user)
 }
 
-func (svc *UserService) Profile(ctx *gin.Context, id int64) (domain.User, error) {
+func (svc *UserService) FindById(ctx *gin.Context, id int64) (domain.User, error) {
 	return svc.repo.FindById(ctx, id)
+}
 
+func (svc *UserService) FindOrCreate(ctx context.Context, phone string) (domain.User, error) {
+	// 查询用户是否存在
+	u, err := svc.repo.FindByPhone(ctx, phone)
+	if err != repository.ErrUserNotFound {
+		// 两种情况
+		// 1.err=nil u是可用的
+		// 2.err!=nil 系统错误
+		return u, err
+	}
+	//用户没有找到
+	err = svc.repo.Create(ctx, domain.User{
+		Phone: phone,
+	})
+	// 两种可能 唯一索引冲突（phone）
+	// 一种是err！=nil
+	if err != nil && err != repository.ErrDuplicateUser {
+		return domain.User{}, err
+	}
+	return svc.repo.FindByPhone(ctx, phone)
 }

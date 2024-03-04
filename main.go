@@ -5,6 +5,7 @@ import (
 	//"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -13,16 +14,22 @@ import (
 	"webook/internal/repository/cache"
 	"webook/internal/repository/dao"
 	"webook/internal/service"
+	"webook/internal/service/sms"
+	"webook/internal/service/sms/localsms"
 	"webook/internal/web"
 	"webook/internal/web/middleware"
-	"webook/ioc"
 )
 
 func main() {
 
 	db := initDB()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "127.0.0.1:6379",
+	})
 	server := initWebServer()
-	initUser(db, server)
+	codeSvc := initCodeSvc(redisClient)
+	initUser(db, redisClient, codeSvc, server)
 	//server := gin.Default()
 	//server.GET("/hello", func(ctx *gin.Context) {
 	//	ctx.String(http.StatusOK, "hello,Kubernetes 启动成功了！")
@@ -30,14 +37,24 @@ func main() {
 	server.Run(":8080")
 }
 
-func initUser(db *gorm.DB, server *gin.Engine) {
-	cmdable := ioc.InitRedis()
-	userCache := cache.NewUserCache(cmdable)
+func initUser(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeService, server *gin.Engine) {
+	userCache := cache.NewUserCache(redisClient)
 	ud := dao.NewUserDAO(db)
 	ur := repository.NewUserRepository(ud, userCache)
 	us := service.NewUserService(ur)
-	hdl := web.NewUserHandler(us)
+	hdl := web.NewUserHandler(us, codeSvc)
 	hdl.RegisterRoutes(server)
+}
+
+func initSMSService() sms.Service {
+	return localsms.NewService()
+}
+
+func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+	cc := cache.NewCodeCache(redisClient)
+	cRepo := repository.NewCodeRepository(cc)
+	cSms := initSMSService()
+	return service.NewCodeService(cRepo, cSms)
 }
 
 func initDB() *gorm.DB {

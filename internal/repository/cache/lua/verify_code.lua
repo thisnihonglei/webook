@@ -19,6 +19,6 @@ if expectedCode==code then
     return 0
 else
     -- 不相等，用户输出错误，减去验证次数
-    redis.call("decr",key)
+    redis.call("decr",cntKey)
     return -2
 end

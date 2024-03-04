@@ -2,18 +2,28 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"webook/internal/repository"
 	"webook/internal/service/sms"
 )
 
+var ErrCodeSendToMany = repository.ErrCodeVerifyToMany
+
 type CodeService struct {
-	repo repository.CodeRepository
+	repo *repository.CodeRepository
 	sms  sms.Service
 }
 
-func (svc *CodeService) send(ctx context.Context, biz, phone string) error {
+func NewCodeService(repo *repository.CodeRepository, smsSvc sms.Service) *CodeService {
+	return &CodeService{
+		repo: repo,
+		sms:  smsSvc,
+	}
+}
+
+func (svc *CodeService) Send(ctx context.Context, biz, phone string) error {
 	code := svc.generate()
 	err := svc.repo.Set(ctx, biz, phone, code)
 	if err != nil {
@@ -25,7 +35,7 @@ func (svc *CodeService) send(ctx context.Context, biz, phone string) error {
 
 func (svc *CodeService) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
 	ok, err := svc.repo.Verify(ctx, biz, phone, inputCode)
-	if err == repository.ErrCodeVerifyToMany {
+	if errors.Is(err, repository.ErrCodeVerifyToMany) {
 		//对外面屏蔽了验证次数过多的错误，
 		return false, nil
 	}
