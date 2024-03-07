@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
 	"time"
@@ -21,26 +20,14 @@ import (
 )
 
 func main() {
-
-	db := initDB()
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: "127.0.0.1:6379",
-	})
-	server := initWebServer()
-	codeSvc := initCodeSvc(redisClient)
-	initUser(db, redisClient, codeSvc, server)
-	//server := gin.Default()
-	//server.GET("/hello", func(ctx *gin.Context) {
-	//	ctx.String(http.StatusOK, "hello,Kubernetes 启动成功了！")
-	//})
+	server := InitWebServer()
 	server.Run(":8080")
 }
 
-func initUser(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeService, server *gin.Engine) {
+func initUser(db *gorm.DB, redisClient redis.Cmdable, codeSvc service.CodeService, server *gin.Engine) {
 	userCache := cache.NewUserCache(redisClient)
 	ud := dao.NewUserDAO(db)
-	ur := repository.NewUserRepository(ud, userCache)
+	ur := repository.NewCachedUserRepository(ud, userCache)
 	us := service.NewUserService(ur)
 	hdl := web.NewUserHandler(us, codeSvc)
 	hdl.RegisterRoutes(server)
@@ -50,24 +37,11 @@ func initSMSService() sms.Service {
 	return localsms.NewService()
 }
 
-func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+func initCodeSvc(redisClient redis.Cmdable) service.CodeService {
 	cc := cache.NewCodeCache(redisClient)
 	cRepo := repository.NewCodeRepository(cc)
 	cSms := initSMSService()
 	return service.NewCodeService(cRepo, cSms)
-}
-
-func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:3306)/webook?charset=utf8mb4&parseTime=True&loc=Local"))
-	if err != nil {
-		panic(err)
-	}
-
-	err = dao.InitTables(db)
-	if err != nil {
-		panic(err)
-	}
-	return db
 }
 
 func initWebServer() *gin.Engine {
