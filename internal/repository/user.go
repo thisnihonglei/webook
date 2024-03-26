@@ -88,6 +88,7 @@ func (repo *CachedUserRepository) Edit(ctx context.Context, u domain.User) error
 func (repo *CachedUserRepository) FindById(ctx context.Context, id int64) (domain.User, error) {
 	du, err := repo.cache.Get(ctx, id)
 	// 只要err为nil，就返回
+	// 缓存未命中
 	if err == nil {
 		return du, err
 	}
@@ -102,12 +103,12 @@ func (repo *CachedUserRepository) FindById(ctx context.Context, id int64) (domai
 		return domain.User{}, err
 	}
 	du = repo.toDomain(u)
-	go func() {
-		err = repo.cache.Set(ctx, du)
-		if err != nil {
-			log.Println(err)
-		}
-	}()
+	//go func() {
+	err = repo.cache.Set(ctx, du)
+	if err != nil {
+		log.Println(err)
+	}
+	//}()
 	return du, nil
 }
 
