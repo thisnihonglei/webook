@@ -116,7 +116,7 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "发送成功",
 		})
-	case service.ErrCodeSendToMany:
+	case service.ErrCodeSendTooMany:
 		ctx.JSON(http.StatusOK, Result{
 			Code: 4,
 			Msg:  "短信发送太频繁，请稍后再试",

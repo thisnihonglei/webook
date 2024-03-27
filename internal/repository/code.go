@@ -6,6 +6,7 @@ import (
 )
 
 var ErrCodeVerifyToMany = cache.ErrCodeVerifyTooMany
+var ErrCodeSendTooMany = cache.ErrCodeSendTooMany
 
 type CodeRepository interface {
 	Set(ctx context.Context, biz, phone, code string) error
