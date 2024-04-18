@@ -5,7 +5,6 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
 	"webook/internal/domain"
@@ -19,13 +18,12 @@ const (
 	bizLogin             = "login"
 )
 
-var JWTKey = []byte("cgWrzQrzH2tfJngYC59iuqh3Dix246FX")
-
 type UserHandler struct {
 	emailRegexExp    *regexp.Regexp
 	passwordRegexExp *regexp.Regexp
 	svc              service.UserService
 	codeSvc          service.CodeService
+	jwtHandler
 }
 
 func NewUserHandler(svc service.UserService, codeSvc service.CodeService) *UserHandler {
@@ -206,22 +204,6 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64) {
-	uc := UserClaims{
-		Uid: uid,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
-	tokenStr, tokenErr := token.SignedString(JWTKey)
-	if tokenErr != nil {
-		ctx.String(http.StatusOK, "系统错误")
-	}
-	ctx.Header("x-jwt-token", tokenStr)
-
-}
-
 func (h *UserHandler) Login(ctx *gin.Context) {
 	type LoginReq struct {
 		Email    string `json:"email"`
@@ -344,9 +326,4 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		Birthday: dateString,
 		AboutMe:  u.AboutMe,
 	})
-}
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	Uid int64
 }

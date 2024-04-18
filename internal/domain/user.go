@@ -8,4 +8,6 @@ type User struct {
 	Birthday int64
 	AboutMe  string
 	Phone    string
+
+	WechatInfo WechatInfo
 }
