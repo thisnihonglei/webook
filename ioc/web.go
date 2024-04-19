@@ -25,7 +25,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 		cors.New(cors.Config{
 			AllowCredentials: true,
 			AllowedHeaders:   []string{"Content-Type", "Authorization"},
-			ExposedHeaders:   []string{"x-jwt-token"},
+			ExposedHeaders:   []string{"x-jwt-token", "x-refresh-token"},
 			AllowOriginFunc: func(origin string) bool {
 				if strings.HasPrefix(origin, "http://localhost") {
 					return true

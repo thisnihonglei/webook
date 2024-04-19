@@ -2,11 +2,9 @@ package middleware
 
 import (
 	"encoding/gob"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
-	"strings"
 	"time"
 	"webook/internal/web"
 )
@@ -26,19 +24,8 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			path == "/oauth2/wechat/callback" {
 			return
 		}
-		authCode := ctx.GetHeader("Authorization")
-		if authCode == "" {
-			// 没有登录，没有token，没有Authorization这个头部
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		seg := strings.Split(authCode, " ")
-		if len(seg) != 2 {
-			// 没登录 Authorization是乱传的
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		tokenStr := seg[1]
+
+		tokenStr := web.ExtractToken(ctx)
 		var uc web.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(token *jwt.Token) (interface{}, error) {
 			return web.JWTKey, nil
@@ -52,15 +39,15 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		expires := uc.ExpiresAt
-		if expires.Sub(time.Now()) < 50*time.Second {
-			uc.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute * 30))
-			tokenStr, err = token.SignedString(web.JWTKey)
-			ctx.Header("x-jwt-token", tokenStr)
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
+		//expires := uc.ExpiresAt
+		//if expires.Sub(time.Now()) < 50*time.Second {
+		//	uc.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute * 30))
+		//	tokenStr, err = token.SignedString(web.JWTKey)
+		//	ctx.Header("x-jwt-token", tokenStr)
+		//	if err != nil {
+		//		fmt.Println(err)
+		//	}
+		//}
 		ctx.Set("user", uc)
 	}
 }
