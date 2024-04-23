@@ -6,16 +6,13 @@ import (
 	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 	"strings"
 	"time"
 	"webook/internal/repository"
 	"webook/internal/repository/cache"
-	"webook/internal/repository/dao"
 	"webook/internal/service"
 	"webook/internal/service/sms"
 	"webook/internal/service/sms/localsms"
-	"webook/internal/web"
 	"webook/internal/web/middleware"
 )
 
@@ -24,14 +21,14 @@ func main() {
 	server.Run(":8080")
 }
 
-func initUser(db *gorm.DB, redisClient redis.Cmdable, codeSvc service.CodeService, server *gin.Engine) {
-	userCache := cache.NewUserCache(redisClient)
-	ud := dao.NewUserDAO(db)
-	ur := repository.NewCachedUserRepository(ud, userCache)
-	us := service.NewUserService(ur)
-	hdl := web.NewUserHandler(us, codeSvc)
-	hdl.RegisterRoutes(server)
-}
+//func initUser(db *gorm.DB, redisClient redis.Cmdable, codeSvc service.CodeService, server *gin.Engine) {
+//	userCache := cache.NewUserCache(redisClient)
+//	ud := dao.NewUserDAO(db)
+//	ur := repository.NewCachedUserRepository(ud, userCache)
+//	us := service.NewUserService(ur)
+//	hdl := web.NewUserHandler(us, codeSvc)
+//	hdl.RegisterRoutes(server)
+//}
 
 func initSMSService() sms.Service {
 	return localsms.NewService()

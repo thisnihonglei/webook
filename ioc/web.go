@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"webook/internal/web"
+	ijwt "webook/internal/web/jwt"
 	"webook/internal/web/middleware"
 	"webook/pkg/ginx/middleware/ratelimit"
 	"webook/pkg/limiter"
@@ -20,7 +21,7 @@ func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechat *web
 	return server
 }
 
-func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
+func InitGinMiddlewares(redisClient redis.Cmdable, hdl ijwt.Handler) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true,
@@ -36,6 +37,6 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 		}),
 
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 1000)).Build(),
-		(&middleware.LoginJWTMiddlewareBuilder{}).CheckLogin(),
+		middleware.NewLoginJWTMiddlewareBuilder(hdl).CheckLogin(),
 	}
 }

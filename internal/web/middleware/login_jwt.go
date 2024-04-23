@@ -6,10 +6,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
-	"webook/internal/web"
+	ijwt "webook/internal/web/jwt"
 )
 
 type LoginJWTMiddlewareBuilder struct {
+	ijwt.Handler
+}
+
+func NewLoginJWTMiddlewareBuilder(hdl ijwt.Handler) *LoginJWTMiddlewareBuilder {
+	return &LoginJWTMiddlewareBuilder{
+		Handler: hdl,
+	}
 }
 
 func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
@@ -20,15 +27,16 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			path == "/users/login" ||
 			path == "/users/login_sms/code/send" ||
 			path == "/users/login_sms" ||
+			path == "/users/refresh_token" ||
 			path == "/oauth2/wechat/authurl" ||
 			path == "/oauth2/wechat/callback" {
 			return
 		}
 
-		tokenStr := web.ExtractToken(ctx)
-		var uc web.UserClaims
+		tokenStr := m.ExtractToken(ctx)
+		var uc ijwt.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(token *jwt.Token) (interface{}, error) {
-			return web.JWTKey, nil
+			return ijwt.JWTKey, nil
 		})
 		if err != nil {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
@@ -48,6 +56,12 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		//		fmt.Println(err)
 		//	}
 		//}
+		err = m.CheckSession(ctx, uc.Ssid)
+		if err != nil {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		ctx.Set("user", uc)
 	}
 }
