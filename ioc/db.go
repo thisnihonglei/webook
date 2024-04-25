@@ -1,13 +1,23 @@
 package ioc
 
 import (
+	"fmt"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"webook/internal/repository/dao"
 )
 
 func InitDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:3306)/webook?charset=utf8mb4&parseTime=True&loc=Local"))
+	type Config struct {
+		DSN string `yaml:"dsn"`
+	}
+	var c Config
+	err := viper.UnmarshalKey("db", &c)
+	if err != nil {
+		panic(fmt.Errorf("MYSQL初始化配置失败，错误信息:%v", err))
+	}
+	db, err := gorm.Open(mysql.Open(c.DSN))
 	if err != nil {
 		panic(err)
 	}
