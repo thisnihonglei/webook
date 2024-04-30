@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"webook/internal/domain"
+	"webook/pkg/logger"
 )
 
 type Service interface {
@@ -20,13 +21,15 @@ type service struct {
 	appId     string
 	appSecret string
 	client    *http.Client
+	logger    logger.LoggerV1
 }
 
-func NewService(appId string, appSecret string) Service {
+func NewService(appId string, appSecret string, logger logger.LoggerV1) Service {
 	return &service{
 		appId:     appId,
 		appSecret: appSecret,
 		client:    http.DefaultClient,
+		logger:    logger,
 	}
 }
 

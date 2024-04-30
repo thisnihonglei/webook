@@ -5,7 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,9 +18,37 @@ import (
 	"webook/internal/web"
 )
 
+func initViperRemote() {
+	err := viper.AddRemoteProvider("etcd3", "http://127.0.0.1:12379", "/webook")
+	if err != nil {
+		panic(err)
+	}
+	viper.SetConfigType("yaml")
+	viper.OnConfigChange(func(in fsnotify.Event) {
+		log.Println("远程配置中心发生变更")
+	})
+	err = viper.ReadRemoteConfig()
+	if err != nil {
+		panic(err)
+	}
+	//go func() {
+	//	for {
+	//		err = viper.WatchRemoteConfig()
+	//		if err != nil {
+	//			panic(err)
+	//		}
+	//		log.Println("watch", viper.GetString("test.key"))
+	//		time.Sleep(time.Second * 3)
+	//	}
+	//
+	//}()
+}
+
 func TestUserHandler_SendSMSCode(t *testing.T) {
+	initViperRemote()
 	rdb := startup.InitRedis()
 	server := startup.InitWebServer()
+
 	testCase := []struct {
 		name string
 

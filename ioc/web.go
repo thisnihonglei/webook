@@ -1,6 +1,7 @@
 package ioc
 
 import (
+	"context"
 	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -11,6 +12,7 @@ import (
 	"webook/internal/web/middleware"
 	"webook/pkg/ginx/middleware/ratelimit"
 	"webook/pkg/limiter"
+	"webook/pkg/logger"
 )
 
 func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechat *web.OAuth2WechatHandler) *gin.Engine {
@@ -21,7 +23,7 @@ func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechat *web
 	return server
 }
 
-func InitGinMiddlewares(redisClient redis.Cmdable, hdl ijwt.Handler) []gin.HandlerFunc {
+func InitGinMiddlewares(redisClient redis.Cmdable, hdl ijwt.Handler, log logger.LoggerV1) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true,
@@ -37,6 +39,9 @@ func InitGinMiddlewares(redisClient redis.Cmdable, hdl ijwt.Handler) []gin.Handl
 		}),
 
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 1000)).Build(),
+		middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
+			log.Debug("", logger.Filed{Key: "req", Value: al})
+		}).AllowReqBody().AllowRespBody().Build(),
 		middleware.NewLoginJWTMiddlewareBuilder(hdl).CheckLogin(),
 	}
 }

@@ -5,10 +5,12 @@ import (
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	glogger "gorm.io/gorm/logger"
 	"webook/internal/repository/dao"
+	"webook/pkg/logger"
 )
 
-func InitDB() *gorm.DB {
+func InitDB(l logger.LoggerV1) *gorm.DB {
 	type Config struct {
 		DSN string `yaml:"dsn"`
 	}
@@ -17,7 +19,12 @@ func InitDB() *gorm.DB {
 	if err != nil {
 		panic(fmt.Errorf("MYSQL初始化配置失败，错误信息:%v", err))
 	}
-	db, err := gorm.Open(mysql.Open(c.DSN))
+	db, err := gorm.Open(mysql.Open(c.DSN), &gorm.Config{
+		Logger: glogger.New(gormLoggerFunc(l.Debug), glogger.Config{
+			SlowThreshold: 0,
+			LogLevel:      glogger.Info,
+		}),
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -27,4 +34,13 @@ func InitDB() *gorm.DB {
 		panic(err)
 	}
 	return db
+}
+
+type gormLoggerFunc func(msg string, fields ...logger.Filed)
+
+func (g gormLoggerFunc) Printf(msg string, args ...interface{}) {
+	g(msg, logger.Filed{
+		Key:   "args",
+		Value: args,
+	})
 }

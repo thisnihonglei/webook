@@ -10,6 +10,7 @@ import (
 	"webook/internal/repository/dao"
 	"webook/internal/service"
 	"webook/internal/web"
+	ijwt "webook/internal/web/jwt"
 	"webook/ioc"
 )
 
@@ -17,6 +18,7 @@ func InitWebServer() *gin.Engine {
 	wire.Build(
 		// 第三方依赖
 		ioc.InitDB, InitRedis,
+		ioc.InitLogger,
 		// Dao 部分
 		dao.NewUserDAO,
 		// cache 部分
@@ -27,11 +29,14 @@ func InitWebServer() *gin.Engine {
 
 		// Service 部分
 		ioc.InitSMSService,
+		ioc.InitWechatService,
 		service.NewUserService,
 		service.NewCodeService,
 
 		// Handler 部分
 		web.NewUserHandler,
+		web.NewOAuth2WechatHandler,
+		ijwt.NewRedisJWTHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,
