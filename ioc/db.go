@@ -36,10 +36,10 @@ func InitDB(l logger.LoggerV1) *gorm.DB {
 	return db
 }
 
-type gormLoggerFunc func(msg string, fields ...logger.Filed)
+type gormLoggerFunc func(msg string, fields ...logger.Field)
 
 func (g gormLoggerFunc) Printf(msg string, args ...interface{}) {
-	g(msg, logger.Filed{
+	g(msg, logger.Field{
 		Key:   "args",
 		Value: args,
 	})

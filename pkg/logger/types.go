@@ -1,13 +1,13 @@
 package logger
 
 type LoggerV1 interface {
-	Debug(msg string, args ...Filed)
-	Info(msg string, args ...Filed)
-	Warn(msg string, args ...Filed)
-	Error(msg string, args ...Filed)
+	Debug(msg string, args ...Field)
+	Info(msg string, args ...Field)
+	Warn(msg string, args ...Field)
+	Error(msg string, args ...Field)
 }
 
-type Filed struct {
+type Field struct {
 	Key   string
 	Value any
 }

@@ -15,11 +15,12 @@ import (
 	"webook/pkg/logger"
 )
 
-func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechat *web.OAuth2WechatHandler) *gin.Engine {
+func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, artHdl *web.ArticleHandler, wechat *web.OAuth2WechatHandler) *gin.Engine {
 	server := gin.Default()
 	server.Use(mdls...)
 	userHdl.RegisterRoutes(server)
 	wechat.RegisterRoutes(server)
+	artHdl.RegisterRoutes(server)
 	return server
 }
 
@@ -40,7 +41,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable, hdl ijwt.Handler, log logger.
 
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 1000)).Build(),
 		middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
-			log.Debug("", logger.Filed{Key: "req", Value: al})
+			log.Debug("", logger.Field{Key: "req", Value: al})
 		}).AllowReqBody().AllowRespBody().Build(),
 		middleware.NewLoginJWTMiddlewareBuilder(hdl).CheckLogin(),
 	}

@@ -21,22 +21,25 @@ func InitWebServer() *gin.Engine {
 		ioc.InitLogger,
 		// Dao 部分
 		dao.NewUserDAO,
+		dao.NewArticleGORMDAO,
 		// cache 部分
 		cache.NewCodeCache, cache.NewUserCache,
 
 		// Repository 部分
-		repository.NewCachedUserRepository, repository.NewCodeRepository,
+		repository.NewCachedUserRepository, repository.NewCodeRepository, repository.NewCachedArticleRepository,
 
 		// Service 部分
 		ioc.InitSMSService,
 		ioc.InitWechatService,
 		service.NewUserService,
 		service.NewCodeService,
+		service.NewArticleService,
 
 		// Handler 部分
 		web.NewUserHandler,
 		web.NewOAuth2WechatHandler,
 		ijwt.NewRedisJWTHandler,
+		web.NewArticleHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,
