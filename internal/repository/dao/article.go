@@ -2,12 +2,14 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"gorm.io/gorm"
 	"time"
 )
 
 type ArticleDAO interface {
 	Insert(ctx context.Context, art Article) (int64, error)
+	UpdateById(ctx context.Context, art Article) error
 }
 
 type ArticleGORMDAO struct {
@@ -18,6 +20,23 @@ func NewArticleGORMDAO(db *gorm.DB) ArticleDAO {
 	return &ArticleGORMDAO{
 		db: db,
 	}
+}
+
+func (a *ArticleGORMDAO) UpdateById(ctx context.Context, art Article) error {
+	now := time.Now().UnixMilli()
+	res := a.db.WithContext(ctx).Model(&Article{}).Where("id = ? AND author_id = ?", art.Id, art.AuthorId).Updates(map[string]any{
+		"title":   art.Title,
+		"content": art.Content,
+		"utime":   now,
+	})
+	err := res.Error
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("更新数据失败")
+	}
+	return nil
 }
 
 func (a *ArticleGORMDAO) Insert(ctx context.Context, art Article) (int64, error) {

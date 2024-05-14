@@ -74,6 +74,86 @@ func (s *ArticleHandlerSuite) TestEdit() {
 				Data: 1,
 			},
 		},
+		{
+			name: "更新帖子",
+			before: func(t *testing.T) {
+				err := s.db.Create(&dao.Article{
+					Id:       2,
+					Title:    "标题",
+					Content:  "内容",
+					AuthorId: 123,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				var art dao.Article
+				err := s.db.Where("id=?", 2).First(&art).Error
+				assert.NoError(t, err)
+				assert.Equal(t, "new title", art.Title)
+				assert.Equal(t, "new content", art.Content)
+				assert.Equal(t, int64(123), art.AuthorId)
+				assert.True(t, art.Utime > 789)
+				art.Utime = 0
+				assert.Equal(t, dao.Article{
+					Id:       2,
+					Title:    "new title",
+					Content:  "new content",
+					AuthorId: 123,
+					Ctime:    456,
+				}, art)
+			},
+			req: Article{
+				Id:      2,
+				Title:   "new title",
+				Content: "new content",
+			},
+			wantCode: http.StatusOK,
+			wantResult: Result[int64]{
+				Data: 2,
+			},
+		},
+		{
+			name: "修改帖子-别人的帖子",
+			before: func(t *testing.T) {
+				// 假装数据库已经有这个帖子
+				err := s.db.Create(&dao.Article{
+					Id:      22,
+					Title:   "我的标题",
+					Content: "我的内容",
+					// 模拟别人
+					AuthorId: 1024,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// 你要验证，保存到了数据库里面
+				var art dao.Article
+				err := s.db.Where("id=?", 22).
+					First(&art).Error
+				assert.NoError(t, err)
+				assert.Equal(t, dao.Article{
+					Id:       22,
+					Title:    "我的标题",
+					Content:  "我的内容",
+					AuthorId: 1024,
+					Ctime:    456,
+					Utime:    789,
+				}, art)
+			},
+			req: Article{
+				Id:      22,
+				Title:   "新的标题",
+				Content: "新的内容",
+			},
+			wantCode: http.StatusOK,
+			wantResult: Result[int64]{
+				Msg: "系统错误",
+			},
+		},
 	}
 
 	for _, tc := range testCase {
@@ -100,7 +180,7 @@ func (s *ArticleHandlerSuite) TestEdit() {
 			}
 
 			var result Result[int64]
-			err = json.Unmarshal(recorder.Body.Bytes(), &result)
+			err = json.NewDecoder(recorder.Body).Decode(&result)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantCode, recorder.Code)
 			assert.Equal(t, tc.wantResult, result)
@@ -120,7 +200,7 @@ type Result[T any] struct {
 }
 
 type Article struct {
-	Id      int64
+	Id      int64  `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }

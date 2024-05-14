@@ -85,6 +85,21 @@ func (mr *MockUserServiceMockRecorder) FindOrCreate(ctx, phone any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrCreate", reflect.TypeOf((*MockUserService)(nil).FindOrCreate), ctx, phone)
 }
 
+// FindOrCreateByWeChat mocks base method.
+func (m *MockUserService) FindOrCreateByWeChat(ctx context.Context, info domain.WechatInfo) (domain.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindOrCreateByWeChat", ctx, info)
+	ret0, _ := ret[0].(domain.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindOrCreateByWeChat indicates an expected call of FindOrCreateByWeChat.
+func (mr *MockUserServiceMockRecorder) FindOrCreateByWeChat(ctx, info any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrCreateByWeChat", reflect.TypeOf((*MockUserService)(nil).FindOrCreateByWeChat), ctx, info)
+}
+
 // Login mocks base method.
 func (m *MockUserService) Login(ctx context.Context, email, password string) (domain.User, error) {
 	m.ctrl.T.Helper()
