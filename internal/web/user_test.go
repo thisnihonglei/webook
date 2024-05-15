@@ -31,7 +31,7 @@ func TestUserEmailPattern(t *testing.T) {
 		},
 	}
 
-	h := NewUserHandler(nil, nil)
+	h := NewUserHandler(nil, nil, nil)
 
 	for _, tc := range testcase {
 		t.Run(tc.name, func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 			userSvc, codeSvc := testCase.mock(ctrl)
 
 			// 利用mock构造UserHandler
-			hdl := NewUserHandler(userSvc, codeSvc)
+			hdl := NewUserHandler(userSvc, nil, codeSvc)
 
 			// 准备服务器 注册路由
 			server := gin.Default()
