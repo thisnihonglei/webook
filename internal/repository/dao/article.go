@@ -55,3 +55,5 @@ type Article struct {
 	Ctime    int64
 	Utime    int64
 }
+
+type PublishedArticle Article
